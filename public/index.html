@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/><!--調整比例-->
+  <title>旅遊心理測驗</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      text-align: center;
+      padding: 50px;
+    }
+    .quiz-container {
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 500px;
+      margin: auto;
+    }
+    .question {
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+    .option {
+      display: block;
+      margin: 10px 0;
+      padding: 10px 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .option:hover {
+      background-color: #f0f0f0;
+    }
+    .selected {
+      background-color: #bbdefb;
+    }
+    #buttons {
+      margin-top: 20px;
+    }
+    button {
+      margin: 0 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    .result {
+      font-size: 18px;
+      margin-top: 30px;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="quiz-container">
+
+    <!-- 信箱輸入區 -->
+    <div id="email-section">
+      <h2>請輸入您的信箱</h2>
+      <input type="email" id="email-input" placeholder="example@mail.com" />
+      <button id="email-submit-btn">送出</button>
+      <p id="email-error" style="color:red; display:none;">請輸入有效的信箱！</p>
+    </div>
+
+    <!-- 問答區 -->
+    <div id="quiz-section" style="display:none;">
+      <div class="question" id="question"></div>
+      <div id="options"></div>
+      <div id="buttons">
+        <button id="prev-btn">上一題</button>
+        <button id="next-btn">下一題</button>
+        <button id="restart-btn" style="display:none;">再來一次</button>
+      </div>
+      <div class="result" id="result"></div>
+    </div>
+
+  </div>
+
+  <script>
+    let userEmail = '';
+
+    const emailSection = document.getElementById('email-section');
+    const emailInput = document.getElementById('email-input');
+    const emailSubmitBtn = document.getElementById('email-submit-btn');
+    const emailError = document.getElementById('email-error');
+
+    const quizSection = document.getElementById('quiz-section');
+
+    emailSubmitBtn.addEventListener('click', () => {
+      const email = emailInput.value.trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        emailError.style.display = 'block';
+      } else {
+        emailError.style.display = 'none';
+        userEmail = email;
+        emailSection.style.display = 'none';
+        quizSection.style.display = 'block';
+        loadQuestion();
+      }
+    });
+
+    // 以下是你原本問答系統的程式碼
+    const quizData = [
+      {
+        question: "你想去哪個國家玩？",
+        options: ["日本", "義大利", "冰島", "紐西蘭"]
+      },
+      {
+        question: "你想去哪個景點？",
+        options: ["沙灘", "森林", "高山", "古城"]
+      },
+      {
+        question: "你想吃什麼？",
+        options: ["壽司", "披薩", "羊排", "牛肉麵"]
+      },
+      {
+        question: "你想住哪種風格的旅店？",
+        options: ["溫泉旅館", "木屋", "設計旅店", "五星級飯店"]
+      }
+    ];
+
+    let currentQuestion = 0;
+    let answers = [];
+    const questionEl = document.getElementById('question');
+    const optionsEl = document.getElementById('options');
+    const nextBtn = document.getElementById('next-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const resultEl = document.getElementById('result');
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    let optionMap = [];
+
+    function loadQuestion() {
+      const q = quizData[currentQuestion];
+      questionEl.textContent = q.question;
+      optionsEl.innerHTML = '';
+      resultEl.innerHTML = '';
+      restartBtn.style.display = 'none';
+
+      if (!optionMap[currentQuestion]) {
+        optionMap[currentQuestion] = shuffle([...q.options]);
+      }
+
+      optionMap[currentQuestion].forEach(option => {
+        const btn = document.createElement('button');
+        btn.textContent = option;
+        btn.classList.add('option');
+
+        if (answers[currentQuestion] === option) {
+          btn.classList.add('selected');
+        }
+
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          answers[currentQuestion] = option;
+        });
+
+        optionsEl.appendChild(btn);
+      });
+
+      prevBtn.disabled = currentQuestion === 0;
+      nextBtn.textContent = currentQuestion < quizData.length - 1 ? "下一題" : "完成";
+    }
+
+    nextBtn.addEventListener('click', () => {
+      if (answers[currentQuestion]) {
+        if (currentQuestion < quizData.length - 1) {
+          currentQuestion++;
+          loadQuestion();
+        } else {
+          showResult();
+        }
+      } else {
+        alert("請選擇一個選項再繼續！");
+      }
+    });
+
+    prevBtn.addEventListener('click', () => {
+      if (currentQuestion > 0) {
+        currentQuestion--;
+        loadQuestion();
+      }
+    });
+
+    restartBtn.addEventListener('click', () => {
+      currentQuestion = 0;
+      answers = [];
+      optionMap = [];
+      resultEl.innerHTML = '';
+      nextBtn.style.display = 'inline-block';
+      prevBtn.style.display = 'inline-block';
+      loadQuestion();
+    });
+
+    function showResult() {
+      questionEl.textContent = "你的旅遊偏好結果如下：";
+      optionsEl.innerHTML = '';
+      nextBtn.style.display = 'none';
+      prevBtn.style.display = 'none';
+      restartBtn.style.display = 'inline-block';
+
+      resultEl.innerHTML = `
+        <strong>你選擇的國家：</strong>${answers[0]}<br/>
+        <strong>你偏好的景點：</strong>${answers[1]}<br/>
+        <strong>你想吃的料理：</strong>${answers[2]}<br/>
+        <strong>你喜歡的旅店風格：</strong>${answers[3]}<br/>
+      `;
+
+      
+      //開始放資料到後端
+      fetch('/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: userEmail,
+          country: answers[0],
+          spot: answers[1],
+          food: answers[2],
+          hotel: answers[3]
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          console.log('結果已儲存，ID:', data.id);
+        } else {
+          console.error('儲存失敗:', data.error);
+        }
+      });
+    }
+  </script>
+</body>
+ 
+</html> 

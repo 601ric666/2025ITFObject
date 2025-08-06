@@ -56,12 +56,21 @@
 <body>
   <div class="quiz-container">
 
-    <!-- 信箱輸入區 -->
-    <div id="email-section">
-      <h2>請輸入您的信箱</h2>
-      <input type="email" id="email-input" placeholder="example@mail.com" />
-      <button id="email-submit-btn">送出</button>
-      <p id="email-error" style="color:red; display:none;">請輸入有效的信箱！</p>
+    <!-- 使用者輸入區 -->
+    <div id="account-section">
+      <h2>請輸入您的資料</h2>
+      <input type="text" id="name-input" placeholder="姓名" />
+      <select id="gender-input">
+        <option value="">請選擇性別</option>
+        <option value="男">男</option>
+        <option value="女">女</option>
+        <option value="其他">其他</option>
+      </select>
+      <input type="number" id="age-input" placeholder="年齡" min="0" />
+      <input type="tel" id="phone-input" placeholder="聯絡電話" />
+      <input type="email" id="email-input" placeholder="Email" />
+      <button id="account-submit-btn">送出</button>
+      <p id="account-error" style="color:red; display:none;">請填寫完整且有效的資料！</p>
     </div>
 
     <!-- 問答區 -->
@@ -81,28 +90,54 @@
   <script>
     let userEmail = '';
 
-    const emailSection = document.getElementById('email-section');
+    const accountSection = document.getElementById('account-section');
+    const nameInput = document.getElementById('name-input');
+    const genderInput = document.getElementById('gender-input');
+    const ageInput = document.getElementById('age-input');
+    const phoneInput = document.getElementById('phone-input');
     const emailInput = document.getElementById('email-input');
-    const emailSubmitBtn = document.getElementById('email-submit-btn');
-    const emailError = document.getElementById('email-error');
+    const accountSubmitBtn = document.getElementById('account-submit-btn');
+    const accountError = document.getElementById('account-error');
 
     const quizSection = document.getElementById('quiz-section');
 
-    emailSubmitBtn.addEventListener('click', () => {
-      const email = emailInput.value.trim();
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        emailError.style.display = 'block';
-      } else {
-        emailError.style.display = 'none';
-        userEmail = email;
-        emailSection.style.display = 'none';
+
+    //以下是輸入資料驗證區域
+      accountSubmitBtn.addEventListener('click', () => {
+        const name = nameInput.value.trim();
+        const gender = genderInput.value;
+        const age = ageInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const email = emailInput.value.trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const phoneRegex = /^[0-9\-+\s()]{6,20}$/; // 簡單電話格式驗證，可以自己調整
+
+        if (!name || !gender || !age || !phone || !email) {
+          accountError.textContent = '請填寫所有欄位！';
+          accountError.style.display = 'block';
+          return;
+        }
+
+        if (!phoneRegex.test(phone)) {
+          accountError.textContent = '請輸入有效的電話號碼！';
+          accountError.style.display = 'block';
+          return;
+        }
+
+        if (!emailRegex.test(email)) {
+          accountError.textContent = '請輸入有效的 Email！';
+          accountError.style.display = 'block';
+          return;
+        }
+
+        accountError.style.display = 'none';
+        userData = { name, gender, age, phone, email };
+        accountSection.style.display = 'none';
         quizSection.style.display = 'block';
         loadQuestion();
-      }
-    });
+      });
 
-    // 以下是你原本問答系統的程式碼
+    // 以下是問答系統的程式碼
     const quizData = [
       {
         question: "你想去哪個國家玩？",
@@ -224,7 +259,11 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: userEmail,
+          name: userData.name,
+          gender: userData.gender,
+          age: userData.age,
+          phone: userData.phone,
+          email: userData.email,
           country: answers[0],
           spot: answers[1],
           food: answers[2],
@@ -242,5 +281,5 @@
     }
   </script>
 </body>
- 
-</html> 
+
+</html>

@@ -3,7 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const nodemailer = require('nodemailer');  // <--- 加入 Nodemailer
+const nodemailer = require('nodemailer');
 
 const app = express();
 const port = 3000;
@@ -21,10 +21,14 @@ const db = new sqlite3.Database('./db.sqlite', (err) => {
   }
 });
 
-// 建立表格
+// 建立表格，新增 name, gender, age, phone 欄位
 db.run(`
   CREATE TABLE IF NOT EXISTS results (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    gender TEXT,
+    age INTEGER,
+    phone TEXT,
     email TEXT,
     country TEXT,
     spot TEXT,
@@ -36,14 +40,19 @@ db.run(`
 
 // 提交資料並寄信
 app.post('/submit', (req, res) => {
-  const { email, country, spot, food, hotel } = req.body;
+  const { name, gender, age, phone, email, country, spot, food, hotel } = req.body;
 
-  if (!email || !country || !spot || !food || !hotel) {
+  // 驗證所有欄位是否齊全
+  if (!name || !gender || !age || !phone || !email || !country || !spot || !food || !hotel) {
     return res.status(400).json({ success: false, error: '缺少欄位' });
   }
 
-  const stmt = db.prepare('INSERT INTO results (email, country, spot, food, hotel) VALUES (?, ?, ?, ?, ?)');
-  stmt.run([email, country, spot, food, hotel], function (err) {
+  const stmt = db.prepare(`
+    INSERT INTO results (name, gender, age, phone, email, country, spot, food, hotel)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  stmt.run([name, gender, age, phone, email, country, spot, food, hotel], function (err) {
     if (err) {
       console.error('儲存錯誤:', err.message);
       return res.status(500).json({ success: false, error: err.message });
@@ -53,17 +62,24 @@ app.post('/submit', (req, res) => {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: 'richardliou0429@gmail.com', // 寄件Gmail
-        pass: 'yvekjeqvcztqdsdk'          // 應用程式密碼
+        user: 'richardliou0429@gmail.com',
+        pass: 'yvekjeqvcztqdsdk'
       }
     });
 
     const mailOptions = {
-      from: 'richardliou0429@gmail.com', // 與上面相同
-      to: 't110ac1030@ntut.org.tw',
+      from: 'richardliou0429@gmail.com',
+      to: email,
       subject: '感謝您填寫旅遊問卷',
-      text: `您好，感謝您填寫旅遊問卷！以下是您提交的資訊：
+      text: `您好 ${name}，感謝您填寫旅遊問卷！以下是您提交的資訊：
 
+姓名：${name}
+性別：${gender}
+年齡：${age}
+電話：${phone}
+Email：${email}
+
+【旅遊偏好】
 - 國家：${country}
 - 景點：${spot}
 - 美食：${food}
@@ -75,7 +91,6 @@ app.post('/submit', (req, res) => {
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.error('寄信失敗:', error.message);
-        // 寄信失敗不影響主流程
       } else {
         console.log('已寄信給：' + email);
       }
